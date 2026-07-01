@@ -47,17 +47,15 @@ public class OtpService {
         }
 
         Otp newOtp = existingOtp.get();
-        if (newOtp.getUsed().equals(true)) {
-            return "OTP already used";
-        }
-
-        if (newOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return "OTP has expired";
-        }
-
         boolean isMatch = passwordEncoder.matches(request.getPlainOtp(), newOtp.getOtp());
         if (!isMatch) {
             return "Invalid OTP";
+        }
+        if (newOtp.getUsed().equals(true)) {
+            return "OTP already used";
+        }
+        if (newOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return "OTP has expired";
         }
         newOtp.setUsed(true);
         otpRepository.save(newOtp);

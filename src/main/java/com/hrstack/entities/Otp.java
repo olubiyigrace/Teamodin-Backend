@@ -14,12 +14,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(
-        name = "otp",
-        uniqueConstraints = {
+@Table(name = "otp", uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"email", "purpose"})
-        }
-)
+        })
 public class Otp {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

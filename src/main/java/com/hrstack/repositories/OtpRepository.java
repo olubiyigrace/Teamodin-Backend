@@ -4,7 +4,6 @@ import com.hrstack.entities.Otp;
 import com.hrstack.enums.OtpPurpose;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface OtpRepository extends JpaRepository<Otp, Long> {

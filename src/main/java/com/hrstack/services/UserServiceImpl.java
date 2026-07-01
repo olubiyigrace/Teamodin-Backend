@@ -57,14 +57,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void resendVerificationOtp(String email) {
-        String otp =
-                otpService.resendOtp(
+        String otp = otpService.resendOtp(
                         OtpRequest.builder()
                                 .email(email)
                                 .purpose(OtpPurpose.VERIFY_ACCOUNT)
                                 .build()
                 );
-
         orderProducer.sendMessage(
                 ProducerMessage.builder()
                         .email(email)
