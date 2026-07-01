@@ -20,6 +20,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,7 @@ public class UserServiceImpl implements UserService {
     private final OtpService otpService;
     private final OrderProducer orderProducer;
     private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
 
     @Override
@@ -91,17 +96,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginResponse login(final LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail());
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new InvalidRequestException("Invalid credentials");
-        }
-        if (!Boolean.TRUE.equals(user.getIsVerified())) {
-            throw new InvalidRequestException("User not verified");
-        }
+        final Authentication authentication = this.authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+        final User user = (User) authentication.getPrincipal();
         String accessToken = jwtService.generateAccessToken(
                 user.getWorkspaceUrl(),
                 user.getId(),
@@ -125,7 +126,6 @@ public class UserServiceImpl implements UserService {
             throw new InvalidRequestException("Invalid refresh token");
         }
         jwtService.validateToken(refreshToken);
-
         String userId = jwtService.getUserIdFromRefreshToken(refreshToken);
         final User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -139,7 +139,17 @@ public class UserServiceImpl implements UserService {
                 user.getRole().name());
         return new LoginResponse(newAccessToken, newRefreshToken, "Bearer");
     }
-//
+//       User user = userRepository.findByEmail(request.getEmail());
+////        if (user == null) {
+////            throw new UsernameNotFoundException("User not found");
+////        }
+////
+////        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+////            throw new InvalidRequestException("Invalid credentials");
+////        }
+////        if (!Boolean.TRUE.equals(user.getIsVerified())) {
+////            throw new InvalidRequestException("User not verified");
+////        }
 //    @Override
 //    public void logout(HttpServletRequest request) {
 //        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
