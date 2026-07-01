@@ -7,6 +7,7 @@ import com.hrstack.dto.requestDto.OtpVerifyRequest;
 import com.hrstack.dto.RegisterUserRequest;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.ApiResponse;
+import com.hrstack.utils.ChangePasswordRequest;
 import com.hrstack.utils.LoginRequest;
 import com.hrstack.utils.LoginResponse;
 import jakarta.validation.Valid;
@@ -49,5 +50,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         final LoginResponse response = userService.refreshToken(request);
         return ResponseEntity.ok(ApiResponse.success(true, "Success!", response));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        userService.changePassword(changePasswordRequest);
+        return ResponseEntity.ok(ApiResponse.success(true, "Password changed successfully", null));
     }
 }

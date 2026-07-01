@@ -26,25 +26,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 //    private final UserSessionRepository userSessionRepository;
 
+
     @Override
     protected void doFilterInternal(final HttpServletRequest request,
                                     final HttpServletResponse response,
                                     final FilterChain filterChain) throws ServletException, IOException {
 
-        if (request.getRequestURI().startsWith("/api/v1/auth")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+//        if (request.getRequestURI().startsWith("/api/v1/auth")) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
         try {
             final String jwt = getJwtFromRequest(request);
-
 //            if (StringUtils.hasText(jwt) && logoutTokenRepository.existsById(jwt)) {
 //                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 //                response.getWriter().write("Session ended");
 //                return;
 //            }
             if (StringUtils.hasText(jwt) && jwtService.validateToken(jwt)) {
-
                 final String userId = jwtService.getUserIdFromToken(jwt);
                 final String workspaceUrl = jwtService.getWorkspaceUrlFromToken(jwt);
                 final String role = jwtService.getRoleFromToken(jwt);
@@ -73,6 +72,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 //                }
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.info("Authentication successfully stored: {}",
+                        SecurityContextHolder.getContext().getAuthentication());
                 log.debug("User authenticated for user ID:{}, institution: {}, role: {}", userId, workspaceUrl, role);
             }
         } catch (final Exception e) {

@@ -12,6 +12,8 @@ import com.hrstack.orders.OrderProducer;
 import com.hrstack.orders.ProducerMessage;
 import com.hrstack.repositories.UserRepository;
 import com.hrstack.security.JwtService;
+import com.hrstack.utils.ChangePasswordRequest;
+import com.hrstack.utils.CurrentUserUtil;
 import com.hrstack.utils.LoginRequest;
 import com.hrstack.utils.LoginResponse;
 import jakarta.transaction.Transactional;
@@ -38,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final OrderProducer orderProducer;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final CurrentUserUtil currentUserUtil;
 
 
     @Override
@@ -133,17 +136,7 @@ public class UserServiceImpl implements UserService {
                 user.getRole().name());
         return new LoginResponse(newAccessToken, newRefreshToken, "Bearer");
     }
-//       User user = userRepository.findByEmail(request.getEmail());
-////        if (user == null) {
-////            throw new UsernameNotFoundException("User not found");
-////        }
-////
-////        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-////            throw new InvalidRequestException("Invalid credentials");
-////        }
-////        if (!Boolean.TRUE.equals(user.getIsVerified())) {
-////            throw new InvalidRequestException("User not verified");
-////        }
+
 //    @Override
 //    public void logout(HttpServletRequest request) {
 //        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -190,23 +183,23 @@ public class UserServiceImpl implements UserService {
 //        userSessionRepository.save(session);
 //    }
 //
-//    @Override
-//    public void changePassword(ChangePasswordRequest request) {
-//        User loggedInUser = currentUserUtil.getLoggedInUser();
-//
-//        boolean matches = passwordEncoder.matches(request.getOldPassword(), loggedInUser.getPassword());
-//        if (!matches) throw new InvalidRequestException("Old password is incorrect");
-//
-//        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-//            throw new InvalidRequestException("Passwords do not match");
-//        }
-//        if (passwordEncoder.matches(request.getNewPassword(), loggedInUser.getPassword())) {
-//            throw new InvalidRequestException("Cannot reuse old password");
-//        }
-//        loggedInUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
-//        userRepository.save(loggedInUser);
-//        log.info("password changed successfully");
-//    }
+    @Override
+    public void changePassword(ChangePasswordRequest request) {
+        User loggedInUser = currentUserUtil.getLoggedInUser();
+
+        boolean matches = passwordEncoder.matches(request.getOldPassword(), loggedInUser.getPassword());
+        if (!matches) throw new InvalidRequestException("Old password is incorrect");
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidRequestException("Passwords do not match");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), loggedInUser.getPassword())) {
+            throw new InvalidRequestException("Cannot reuse old password");
+        }
+        loggedInUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(loggedInUser);
+        log.info("password changed successfully");
+    }
 //
 //    @Override
 //    public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
