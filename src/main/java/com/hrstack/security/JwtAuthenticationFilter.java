@@ -60,14 +60,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
                 final SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
                 final UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
+                        new UsernamePasswordAuthenticationToken(userId, null,
                                 Collections.singletonList(authority)
                         );
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
 //                Optional<UserSession> session = userSessionRepository.findByAccessToken(jwt);
 //                if (session.isPresent() && session.get().isRevoked()) {

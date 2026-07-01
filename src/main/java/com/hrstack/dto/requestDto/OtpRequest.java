@@ -1,4 +1,4 @@
-package com.hrstack.dto;
+package com.hrstack.dto.requestDto;
 
 import com.hrstack.enums.OtpPurpose;
 import lombok.Builder;

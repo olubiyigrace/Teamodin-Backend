@@ -1,7 +1,7 @@
 package com.hrstack.services;
 
-import com.hrstack.dto.OtpRequest;
-import com.hrstack.dto.OtpVerifyRequest;
+import com.hrstack.dto.requestDto.OtpRequest;
+import com.hrstack.dto.requestDto.OtpVerifyRequest;
 import com.hrstack.entities.Otp;
 import com.hrstack.entities.User;
 import com.hrstack.enums.OtpPurpose;

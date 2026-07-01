@@ -6,7 +6,7 @@ import com.hrstack.entities.User;
 import com.hrstack.enums.OtpPurpose;
 import com.hrstack.exceptions.DuplicateResourceException;
 import com.hrstack.exceptions.InvalidRequestException;
-import com.hrstack.dto.OtpRequest;
+import com.hrstack.dto.requestDto.OtpRequest;
 import com.hrstack.mappers.UserMapper;
 import com.hrstack.orders.OrderProducer;
 import com.hrstack.orders.ProducerMessage;
@@ -14,26 +14,17 @@ import com.hrstack.repositories.UserRepository;
 import com.hrstack.security.JwtService;
 import com.hrstack.utils.LoginRequest;
 import com.hrstack.utils.LoginResponse;
-import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -103,6 +94,9 @@ public class UserServiceImpl implements UserService {
                 )
         );
         final User user = (User) authentication.getPrincipal();
+        if (!Boolean.TRUE.equals(user.getIsVerified())) {
+            throw new InvalidRequestException("User not verified");
+        }
         String accessToken = jwtService.generateAccessToken(
                 user.getWorkspaceUrl(),
                 user.getId(),
