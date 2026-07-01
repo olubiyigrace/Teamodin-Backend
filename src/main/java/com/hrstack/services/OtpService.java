@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -66,13 +65,29 @@ public class OtpService {
     }
 
     public String resendOtp(OtpRequest request) {
-
         checkCooldown(request.getEmail(), request.getPurpose());
-        invalidateOldOtps(request.getEmail(), request.getPurpose());
+        String otpCode = AppUtils.generateOtp();
+        Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
 
-        String otp = createOtp(request);
+        if (existingOtp.isPresent()) {
+            Otp otp = existingOtp.get();
+            otp.setOtp(passwordEncoder.encode(otpCode));
+            otp.setUsed(false);
+            otp.setCreatedAt(LocalDateTime.now());
+            otp.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+            otpRepository.save(otp);
+        } else {
+            Otp otp = Otp.builder()
+                    .email(request.getEmail())
+                    .purpose(request.getPurpose())
+                    .otp(passwordEncoder.encode(otpCode))
+                    .used(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(10))
+                    .build();
+            otpRepository.save(otp);
+        }
         createCooldown(request.getEmail(), request.getPurpose());
-        return otp;
+        return otpCode;
     }
 
     private String cooldownKey(String email, OtpPurpose purpose) {
@@ -89,12 +104,6 @@ public class OtpService {
     private void createCooldown(String email, OtpPurpose purpose) {
         String key = cooldownKey(email, purpose);
         redisTemplate.opsForValue().set(key, "1", Duration.ofSeconds(60));
-    }
-
-    private void invalidateOldOtps(String email, OtpPurpose purpose) {
-        List<Otp> otps = otpRepository.findAllByEmailAndPurposeAndUsedFalse(email, purpose);
-        otps.forEach(otp -> otp.setUsed(true));
-        otpRepository.saveAll(otps);
     }
 }
 
