@@ -1,11 +1,14 @@
 package com.hrstack.controllers;
 
 
+import com.hrstack.dto.requestDto.RefreshTokenRequest;
 import com.hrstack.services.OtpService;
 import com.hrstack.dto.OtpVerifyRequest;
 import com.hrstack.dto.RegisterUserRequest;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.ApiResponse;
+import com.hrstack.utils.LoginRequest;
+import com.hrstack.utils.LoginResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -36,9 +39,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(true, "OTP sent successfully.", null));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@RequestParam String email) {
-        userService.login(email);
-        return ResponseEntity.ok(ApiResponse.success(true, "Login successful", null));
+    @PostMapping("/sign-in")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        final LoginResponse response = userService.login(request);
+        return ResponseEntity.ok(ApiResponse.success(true, "login successful", response));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        final LoginResponse response = userService.refreshToken(request);
+        return ResponseEntity.ok(ApiResponse.success(true, "Success!", response));
     }
 }

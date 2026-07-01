@@ -24,7 +24,6 @@ import java.util.Collections;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
-//    private final LogoutTokenRepository logoutTokenRepository;
 //    private final UserSessionRepository userSessionRepository;
 
     @Override
@@ -59,8 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.warn("Missing role in JWT for userId={}", userId);
                     throw new UnauthorizedException("Missing role in JWT");
                 }
-                final SimpleGrantedAuthority authority =
-                        new SimpleGrantedAuthority("ROLE_" + role);
+                final SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
                 final UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userId,
@@ -79,11 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 //                }
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug(
-                        "User authenticated for user ID:{}, institution: {}, role: {}",
-                        userId,
-                        workspaceUrl,
-                        role);
+                log.debug("User authenticated for user ID:{}, institution: {}, role: {}", userId, workspaceUrl, role);
             }
         } catch (final Exception e) {
             log.error("Error authenticating user", e);

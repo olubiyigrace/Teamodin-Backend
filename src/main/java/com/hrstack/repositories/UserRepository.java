@@ -1,6 +1,7 @@
 package com.hrstack.repositories;
 
 import com.hrstack.entities.User;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
