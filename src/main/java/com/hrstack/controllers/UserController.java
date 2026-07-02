@@ -8,12 +8,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
-@RequestMapping
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @RestController
 public class UserController {
@@ -32,8 +30,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(true, "Logout successful", null));
     }
 
-    @PostMapping("/update-admin-profile")
-    public ResponseEntity<ApiResponse<String>> update(UpdateUserProfileRequest request) {
+    @PostMapping("/edit-admin-profile")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> update(@Valid @RequestBody UpdateUserProfileRequest request) {
         userService.update(request);
         return ResponseEntity.ok(ApiResponse.success(true, "Profile updated successfully", null));
     }

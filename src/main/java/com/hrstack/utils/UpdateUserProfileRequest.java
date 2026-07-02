@@ -9,7 +9,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class UpdateUserProfileRequest {
-
     @NotBlank(message = "Name should not be empty")
     @Pattern(regexp = "^[A-Za-z]+(?:[-\\s][A-Za-z]+)*(?:\\s[A-Za-z]+(?:[-\\s][A-Za-z]+)*)?\\s[A-Za-z]+(?:[-\\s][A-Za-z]+)*$",
             message = "Please enter first name, middle name(Optional), and last name separated by spaces")

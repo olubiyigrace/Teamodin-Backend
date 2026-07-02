@@ -45,18 +45,18 @@ spring:
 
   mail:
     host: smtp.gmail.com
-    port: 587
+    port: 465
     username: multitenantbank@gmail.com
     password: dhmj rivz ftmg osoo
     properties:
       mail:
        smtp:
         auth: true
-        starttls:
-            enable: true
-            required: true
+#        starttls:
+#            enable: true
+#            required: true
         ssl:
-          enable: false
+          enable: true
 
   data:
     redis:
