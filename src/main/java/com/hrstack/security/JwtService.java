@@ -35,20 +35,22 @@ public class JwtService {
             publicKey = loadPublicKey(jwtProperties.getPublicKeyPath());
 
             log.info("Private & Public key loaded successfully");
-        } catch (final Exception e) {
+        } catch (Exception e) {
             log.error("Error loading private key", e);
             throw new RuntimeException("Error loading private key", e);
         }
     }
 
-    public String generateAccessToken(@Nonnull final String workspaceUrl, final String userId, final String role) {
-        final Date now = new Date();
-        final Date expiration = new Date(System.currentTimeMillis() + jwtProperties.getAccessTokenExpiration());
+    public String generateAccessToken(@Nonnull String workspaceUrl, String userId, String role, String sessionId) {
+        Date now = new Date();
+        Date expiration = new Date(System.currentTimeMillis() + jwtProperties.getAccessTokenExpiration());
 
         return Jwts.builder()
                 .subject(workspaceUrl)
                 .claim("user_id", userId)
                 .claim("role", role)
+                .claim("sid", sessionId)
+                .claim("tokenType", "access")
                 .issuedAt(now)
                 .expiration(expiration)
                 .issuer("hrstack-app")
@@ -57,7 +59,7 @@ public class JwtService {
 
     }
 
-    public String generateRefreshToken(@Nonnull final String workspaceUrl, @Nonnull final String userId, final String role) {
+    public String generateRefreshToken(@Nonnull String workspaceUrl, @Nonnull String userId, String role, String sessionId) {
         final Date now = new Date();
         final Date expiration = new Date(System.currentTimeMillis() + jwtProperties.getRefreshTokenExpiration());
 
@@ -65,14 +67,20 @@ public class JwtService {
                 .subject(userId)
                 .claim("workspace_url", workspaceUrl)
                 .claim("role", role)
+                .claim("sid", sessionId)
                 .claim("tokenType", "refresh")
                 .issuedAt(now)
                 .expiration(expiration)
                 .issuer("hrstack-app")
                 .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
-
     }
+
+    public String getSessionId(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("sid", String.class);
+    }
+
     public String getUserIdFromRefreshToken(final String token) {
         final Claims claims = getClaimsFromToken(token);
         return claims.getSubject();
@@ -106,57 +114,50 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        System.out.println("JWT CLAIMS = " + claims);
         return claims;
+    }
+
+    public boolean isAccessToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        if (claims == null) return false;
+        return "access".equals(claims.get("tokenType", String.class));
     }
 
     public boolean isRefreshToken(String token) {
         Claims claims = getClaimsFromToken(token);
         if (claims == null) return false;
-
-        return "refresh".equals(String.valueOf(claims.get("tokenType")));
+        return "refresh".equals(claims.get("tokenType", String.class));
     }
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-
-        final Claims claims = Jwts.parser()
-                .verifyWith(publicKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        return claimsResolver.apply(claims);
-    }
-
-    public String generateLoginToken(String userId) {
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + (5 * 60 * 1000));
+    public String generatePasswordResetToken(String email) {
         return Jwts.builder()
-                .subject(userId)
-                .claim("type", "login_token")
-                .issuedAt(now)
-                .expiration(expiry)
+                .subject(email)
+                .claim("purpose", "PASSWORD_RESET")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 10 * 60 * 1000))
                 .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 
-    public void validateLoginToken(String token) {
+    public boolean validatePasswordResetToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        String type = claims.get("type", String.class);
-        if (!"login_token".equals(type)) {
-            throw new InvalidRequestException("Invalid login token");
+        String type = claims.get("purpose", String.class);
+        if (!"PASSWORD_RESET".equals(type)) {
+            throw new InvalidRequestException("Invalid reset token");
         }
         if (claims.getExpiration().before(new Date())) {
-            throw new InvalidRequestException("Login token expired");
+            throw new InvalidRequestException("Reset token expired");
         }
+        return true;
     }
 
-    public String getUserIdFromLoginToken(String token) {
-        return getClaimsFromToken(token).getSubject();
+    public String getEmailFromResetToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        String purpose = claims.get("purpose", String.class);
+        if (!"PASSWORD_RESET".equals(purpose)) {
+            throw new InvalidRequestException("Invalid reset token");
+        }
+        return claims.getSubject();
     }
 
     private PrivateKey loadPrivateKey(final String privateKeyPath) throws Exception {
@@ -184,11 +185,9 @@ public class JwtService {
     private PublicKey loadPublicKey(final String publicKeyPath) throws Exception {
         try (final InputStream is = JwtService.class.getClassLoader()
                 .getResourceAsStream(publicKeyPath)) {
-
             if (is == null) {
                 throw new RuntimeException("Public key not found");
             }
-
             final String key = new String(is.readAllBytes());
             final String publicKeyPEM = key
                     .replace("-----BEGIN PUBLIC KEY-----", "")

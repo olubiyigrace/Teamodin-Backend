@@ -7,9 +7,9 @@ spring:
     import: optional:file:.env[.properties]
 
   datasource:
-    url: jdbc:postgresql://localhost:5443/${DB_NAME:hr_stack}
+    url: jdbc:postgresql://localhost:${DB_PORT}/${DB_NAME}
     username: postgres
-    password: ${DB_PASSWORD:Oluwafunke3060$}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -21,7 +21,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -45,24 +45,24 @@ spring:
 
   mail:
     host: smtp.gmail.com
-    port: 465
+    port: 587
     username: multitenantbank@gmail.com
     password: dhmj rivz ftmg osoo
     properties:
       mail:
        smtp:
         auth: true
-#        starttls:
-#            enable: true
-#            required: true
+        starttls:
+            enable: true
+            required: true
         ssl:
-          enable: true
+          enable: false
 
   data:
     redis:
       host: localhost
       port: 6379
-      timeout: 3000
+      timeout: 60000
 
   rabbitmq:
     host: localhost

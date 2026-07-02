@@ -1,17 +1,15 @@
-package com.hrstack.orders;
+package com.hrstack.dto.requestDto;
 
 import com.hrstack.enums.OtpPurpose;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class ProducerMessage {
+public class OtpVerifyRequest {
+    private String plainOtp;
     private String email;
-    private String otp;
     private OtpPurpose purpose;
 }

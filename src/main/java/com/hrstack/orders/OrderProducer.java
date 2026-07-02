@@ -11,6 +11,6 @@ public class OrderProducer {
     private final RabbitTemplate rabbitTemplate;
 
     public void sendMessage(ProducerMessage request) {
-        rabbitTemplate.convertAndSend(RabbitConfig.QUEUE, request.getEmail());
+        rabbitTemplate.convertAndSend(RabbitConfig.QUEUE, request);
     }
 }

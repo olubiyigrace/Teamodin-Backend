@@ -1,4 +1,4 @@
-package com.hrstack.user;
+package com.hrstack.enums;
 
 public enum Role {
     ADMIN,

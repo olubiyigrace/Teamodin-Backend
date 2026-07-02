@@ -1,0 +1,153 @@
+package com.hrstack.services;
+
+import com.hrstack.dto.requestDto.OtpRequest;
+import com.hrstack.dto.requestDto.OtpVerifyRequest;
+import com.hrstack.entities.Otp;
+import com.hrstack.entities.User;
+import com.hrstack.enums.OtpPurpose;
+import com.hrstack.exceptions.DuplicateResourceException;
+import com.hrstack.exceptions.InvalidRequestException;
+import com.hrstack.repositories.OtpRepository;
+import com.hrstack.repositories.UserRepository;
+import com.hrstack.security.JwtService;
+import com.hrstack.utils.AppUtils;
+import com.hrstack.utils.VerifyResetOtpRequest;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class OtpService {
+    private final OtpRepository otpRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final StringRedisTemplate redisTemplate;
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
+
+
+    public String createOtp(OtpRequest request) {
+        checkCooldown(request.getEmail(), request.getPurpose());
+        String otpCode = AppUtils.generateOtp();
+        Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
+
+        if(existingOtp.isPresent() && existingOtp.get().getUsed().equals(true)){
+            throw new DuplicateResourceException("Duplicate verification not allowed");
+        }
+        else if (existingOtp.isPresent() && existingOtp.get().getUsed().equals(false)) {
+            Otp otp = existingOtp.get();
+            otp.setOtp(passwordEncoder.encode(otpCode));
+            otp.setUsed(false);
+            otp.setCreatedAt(LocalDateTime.now());
+            otp.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+            otpRepository.save(otp);
+        } else {
+            Otp otp = Otp.builder()
+                    .email(request.getEmail())
+                    .purpose(request.getPurpose())
+                    .otp(passwordEncoder.encode(otpCode))
+                    .used(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(10))
+                    .build();
+            otpRepository.save(otp);
+        }
+        createCooldown(request.getEmail(), request.getPurpose());
+        return otpCode;
+    }
+
+    public void verifyOtp(OtpVerifyRequest request) {
+        Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
+        if (existingOtp.isEmpty()) {
+            throw new InvalidRequestException("OTP not found");
+        }
+
+        Otp newOtp = existingOtp.get();
+        boolean isMatch = passwordEncoder.matches(request.getPlainOtp(), newOtp.getOtp());
+        if (!isMatch) {
+            throw new InvalidRequestException("Invalid OTP");
+        }
+        if (newOtp.getUsed().equals(true)) {
+            throw new DuplicateResourceException("OTP already used");
+        }
+        if (newOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new InvalidRequestException("OTP has expired");
+        }
+        newOtp.setUsed(true);
+        User user = userRepository.findByEmail(request.getEmail());
+        user.setIsVerified(true);
+        userRepository.save(user);
+        otpRepository.save(newOtp);
+    }
+
+    public String verifyResetOtp(VerifyResetOtpRequest request) {
+        Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), OtpPurpose.RESET_PASSWORD);
+        if (existingOtp.isEmpty()) {
+            throw new InvalidRequestException("OTP not found");
+        }
+
+        Otp newOtp = existingOtp.get();
+        boolean isMatch = passwordEncoder.matches(request.getOtp(), newOtp.getOtp());
+        if (!isMatch) {
+            throw new InvalidRequestException("Invalid OTP");
+        }
+        if (newOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new InvalidRequestException("OTP expired");
+        }
+        newOtp.setUsed(true);
+        otpRepository.save(newOtp);
+        return jwtService.generatePasswordResetToken(request.getEmail());
+    }
+
+    public String resendOtp(OtpRequest request) {
+        checkCooldown(request.getEmail(), request.getPurpose());
+        String otpCode = AppUtils.generateOtp();
+        Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
+
+       if(existingOtp.isPresent() && existingOtp.get().getUsed().equals(true)){
+           throw new DuplicateResourceException("Duplicate verification not allowed");
+       }
+        else if (existingOtp.isPresent() && existingOtp.get().getUsed().equals(false)) {
+            Otp otp = existingOtp.get();
+            otp.setOtp(passwordEncoder.encode(otpCode));
+            otp.setUsed(false);
+            otp.setCreatedAt(LocalDateTime.now());
+            otp.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+            otpRepository.save(otp);
+        } else {
+            Otp otp = Otp.builder()
+                    .email(request.getEmail())
+                    .purpose(request.getPurpose())
+                    .otp(passwordEncoder.encode(otpCode))
+                    .used(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(10))
+                    .build();
+            otpRepository.save(otp);
+        }
+        createCooldown(request.getEmail(), request.getPurpose());
+        return otpCode;
+    }
+
+    private String cooldownKey(String email, OtpPurpose purpose) {
+        return "otp:cooldown:" + purpose + ":" + email;
+    }
+
+    private void checkCooldown(String email, OtpPurpose purpose) {
+        String key = cooldownKey(email, purpose);
+        if (redisTemplate.hasKey(key)) {
+            throw new InvalidRequestException("Please wait before requesting another OTP.");
+        }
+    }
+
+    private void createCooldown(String email, OtpPurpose purpose) {
+        String key = cooldownKey(email, purpose);
+        redisTemplate.opsForValue().set(key, "1", Duration.ofSeconds(60));
+    }
+}
+

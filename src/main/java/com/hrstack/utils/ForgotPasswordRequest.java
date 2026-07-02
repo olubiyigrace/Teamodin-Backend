@@ -1,4 +1,4 @@
-package com.hrstack.otp;
+package com.hrstack.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OtpVerifyRequest {
-    private String plainOtp;
-    private String email;
+public class ForgotPasswordRequest {
+    private  String email;
 }
