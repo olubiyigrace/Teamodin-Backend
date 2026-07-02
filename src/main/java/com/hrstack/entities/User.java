@@ -28,6 +28,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String companyName;
 
+    @Column(nullable = false)
+    private String adminName;
+
     @Column(nullable = false, unique = true)
     private String workspaceUrl;
 

@@ -6,6 +6,7 @@ create table users
     deleted_at    timestamp(6),
     email         varchar(255) not null,
     company_name  varchar(255) not null,
+    admin_name    varchar(255) not null,
     is_verified   boolean      not null,
     workspace_url varchar(255) not null unique,
     password      varchar(255) not null,

@@ -4,7 +4,7 @@ package com.hrstack.controllers;
 import com.hrstack.dto.requestDto.RefreshTokenRequest;
 import com.hrstack.services.OtpService;
 import com.hrstack.dto.requestDto.OtpVerifyRequest;
-import com.hrstack.dto.RegisterUserRequest;
+import com.hrstack.dto.requestDto.RegisterUserRequest;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.*;
 import jakarta.validation.Valid;

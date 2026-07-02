@@ -1,6 +1,6 @@
 package com.hrstack.services;
 
-import com.hrstack.dto.RegisterUserRequest;
+import com.hrstack.dto.requestDto.RegisterUserRequest;
 import com.hrstack.dto.requestDto.RefreshTokenRequest;
 import com.hrstack.entities.User;
 import com.hrstack.enums.OtpPurpose;
@@ -237,5 +237,12 @@ public class UserServiceImpl implements UserService {
 
         String sessionId = jwtService.getSessionId(token);
        redisSessionService.deleteAll(sessionId);
+    }
+
+    @Override
+    public void update(UpdateUserProfileRequest request) {
+            User user = currentUserUtil.getLoggedInUser();
+            user.setAdminName(request.getAdminName());
+            userRepository.save(user);
     }
 }
