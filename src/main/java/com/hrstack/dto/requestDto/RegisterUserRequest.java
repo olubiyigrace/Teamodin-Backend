@@ -1,5 +1,6 @@
-package com.hrstack.dto;
+package com.hrstack.dto.requestDto;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -16,6 +17,12 @@ import lombok.Setter;
 public class RegisterUserRequest {
     @NotBlank(message = "Company name is required")
     private String companyName;
+
+    @NotBlank(message = "Name should not be empty")
+    @Pattern(regexp = "^[A-Za-z]+(?:[-\\s][A-Za-z]+)*(?:\\s[A-Za-z]+(?:[-\\s][A-Za-z]+)*)?\\s[A-Za-z]+(?:[-\\s][A-Za-z]+)*$",
+            message = "Please enter first name, middle name(Optional), and last name separated by spaces")
+    @Column(updatable = false)
+    private String adminName;
 
     @NotBlank(message = "Workspace URL is required")
     private String workspaceUrl;

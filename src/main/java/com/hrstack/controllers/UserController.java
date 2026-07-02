@@ -3,6 +3,7 @@ package com.hrstack.controllers;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.ApiResponse;
 import com.hrstack.utils.ChangePasswordRequest;
+import com.hrstack.utils.UpdateUserProfileRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
         userService.logout(request);
         return ResponseEntity.ok(ApiResponse.success(true, "Logout successful", null));
+    }
+
+    @PostMapping("/update-admin-profile")
+    public ResponseEntity<ApiResponse<String>> update(UpdateUserProfileRequest request) {
+        userService.update(request);
+        return ResponseEntity.ok(ApiResponse.success(true, "Profile updated successfully", null));
     }
 }
