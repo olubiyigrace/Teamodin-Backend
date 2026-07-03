@@ -1,6 +1,5 @@
 package com.hrstack.dto.requestDto;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -14,21 +13,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterAdminRequest {
+public class RegisterCompanyRequest {
     @NotBlank(message = "Company name is required")
     private String companyName;
-
-    @NotBlank(message = "Name should not be empty")
-    @Pattern(regexp = "^[\\p{L}\\p{M}]+(?:[ '-][\\p{L}\\p{M}]+)*$",
-            message = "Name can only contain letters, spaces, apostrophes, and hyphens.")
-    @Column(updatable = false)
-    private String firstName;
-
-    @NotBlank(message = "Name should not be empty")
-    @Pattern(regexp = "^[\\p{L}\\p{M}]+(?:[ '-][\\p{L}\\p{M}]+)*$",
-            message = "Name can only contain letters, spaces, apostrophes, and hyphens.")
-    @Column(updatable = false)
-    private String lastName;
 
     @NotBlank(message = "Workspace URL is required")
     private String workspaceUrl;
@@ -37,7 +24,7 @@ public class RegisterAdminRequest {
     @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*+=])(?=\\S+$).{8,}$",
             message = "Password must contain at least one uppercase, one lowercase, one digit, a character and no whitespace")
-    private String password;
+    private String adminPassword;
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
@@ -47,5 +34,5 @@ public class RegisterAdminRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "example@email.com")
-    private String email;
+    private String adminEmail;
 }

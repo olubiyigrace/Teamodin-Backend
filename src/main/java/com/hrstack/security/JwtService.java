@@ -40,12 +40,12 @@ public class JwtService {
         }
     }
 
-    public String generateAccessToken(@Nonnull String workspaceUrl, String userId, String role, String sessionId) {
+    public String generateAccessToken(@Nonnull String company_id, String userId, String role, String sessionId) {
         Date now = new Date();
         Date expiration = new Date(System.currentTimeMillis() + jwtProperties.getAccessTokenExpiration());
 
         return Jwts.builder()
-                .subject(workspaceUrl)
+                .subject(company_id)
                 .claim("user_id", userId)
                 .claim("role", role)
                 .claim("sid", sessionId)
@@ -58,13 +58,13 @@ public class JwtService {
 
     }
 
-    public String generateRefreshToken(@Nonnull String workspaceUrl, @Nonnull String userId, String role, String sessionId) {
+    public String generateRefreshToken(@Nonnull String company_id, @Nonnull String userId, String role, String sessionId) {
         final Date now = new Date();
         final Date expiration = new Date(System.currentTimeMillis() + jwtProperties.getRefreshTokenExpiration());
 
         return Jwts.builder()
                 .subject(userId)
-                .claim("workspace_url", workspaceUrl)
+                .claim("company_id", company_id)
                 .claim("role", role)
                 .claim("sid", sessionId)
                 .claim("tokenType", "refresh")

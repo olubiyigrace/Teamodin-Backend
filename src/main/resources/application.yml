@@ -81,7 +81,7 @@ app:
     refresh-token-expiration: 604800000
 
   workspace:
-    base-url: hrstack.app/
+    base-url: https://hrstack.app/
 
 springdoc:
   default-produces-media-type: application/json

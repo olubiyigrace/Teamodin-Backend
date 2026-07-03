@@ -29,13 +29,6 @@ public class EmailService {
     private String fromAddress;
 
 
-    public void sendOtpEmail(String to, String otp) {
-        sendSimpleEmail(
-                to,
-                "Verify your HRStack account",
-                "Your verification code is: " + otp + "\n\nEnter this code to verify your account."
-        );
-    }
 
     public void sendSimpleEmail(String to, String subject, String body) {
         try {

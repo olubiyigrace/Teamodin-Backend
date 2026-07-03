@@ -2,13 +2,13 @@ package com.hrstack.services;
 
 import com.hrstack.dto.requestDto.OtpRequest;
 import com.hrstack.dto.requestDto.OtpVerifyRequest;
+import com.hrstack.entities.Company;
 import com.hrstack.entities.Otp;
-import com.hrstack.entities.User;
 import com.hrstack.enums.OtpPurpose;
 import com.hrstack.exceptions.DuplicateResourceException;
 import com.hrstack.exceptions.InvalidRequestException;
 import com.hrstack.repositories.OtpRepository;
-import com.hrstack.repositories.UserRepository;
+import com.hrstack.repositories.CompanyRepository;
 import com.hrstack.security.JwtService;
 import com.hrstack.utils.AppUtils;
 import com.hrstack.utils.VerifyResetOtpRequest;
@@ -29,7 +29,7 @@ public class OtpService {
     private final OtpRepository otpRepository;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
-    private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final JwtService jwtService;
 
 
@@ -63,7 +63,7 @@ public class OtpService {
     }
 
     public void verifyOtp(OtpVerifyRequest request) {
-        Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
+        Optional<Otp> existingOtp = otpRepository.findByEmailAndPurpose(request.getAdminEmail(), request.getPurpose());
         if (existingOtp.isEmpty()) {
             throw new InvalidRequestException("OTP not found");
         }
@@ -80,9 +80,9 @@ public class OtpService {
             throw new InvalidRequestException("OTP has expired");
         }
         newOtp.setUsed(true);
-        User user = userRepository.findByEmail(request.getEmail());
-        user.setIsVerified(true);
-        userRepository.save(user);
+        Company workspace = companyRepository.findByAdminEmail(request.getAdminEmail());
+        workspace.setIsVerified(true);
+        companyRepository.save(workspace);
         otpRepository.save(newOtp);
     }
 

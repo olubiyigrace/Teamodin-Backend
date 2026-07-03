@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class OtpVerifyRequest {
     private String plainOtp;
-    private String email;
+    private String adminEmail;
     private OtpPurpose purpose;
 }

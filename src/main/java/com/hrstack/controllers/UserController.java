@@ -1,9 +1,10 @@
 package com.hrstack.controllers;
 
+import com.hrstack.dto.requestDto.RegisterUserRequest;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.ApiResponse;
 import com.hrstack.utils.ChangePasswordRequest;
-import com.hrstack.utils.UpdateProfileRequest;
+import com.hrstack.utils.EditProfileRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,13 @@ public class UserController {
     private final UserService userService;
 
 
+    @PostMapping("/register-user")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> createUser(@Valid @RequestBody RegisterUserRequest request){
+        userService.createUser(request);
+        return ResponseEntity.ok(ApiResponse.success(true, "User created successfully", null));
+    }
+
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         userService.changePassword(changePasswordRequest);
@@ -33,9 +41,8 @@ public class UserController {
     }
 
     @PutMapping("/edit-profile")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<String>> update(@RequestParam String id, @Valid @RequestBody UpdateProfileRequest request) {
-        userService.update(id, request);
+    public ResponseEntity<ApiResponse<String>> editProfile(@Valid @RequestBody EditProfileRequest request) {
+        userService.editProfile(request);
         return ResponseEntity.ok(ApiResponse.success(true, "Profile updated successfully", null));
     }
 

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace Invitation</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#F4F0FF;font-family:Arial,Helvetica,sans-serif;">
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="background:#F4F0FF;padding:40px 15px;">
+
+    <tr>
+
+        <td align="center">
+
+            <table role="presentation"
+                   width="650"
+                   cellpadding="0"
+                   cellspacing="0"
+                   border="0"
+                   style="
+                   width:650px;
+                   max-width:650px;
+                   background:#ffffff;
+                   border-radius:20px;
+                   overflow:hidden;">
+
+                <!-- ========================= -->
+                <!-- HEADER -->
+                <!-- ========================= -->
+
+                <tr>
+
+                    <td align="center"
+                        style="
+                        background:linear-gradient(135deg,#5B21B6,#7C3AED,#8B5CF6);
+                        padding:55px 40px;">
+
+                        <!-- Logo -->
+
+                        <img th:if="${logoUrl != null}"
+                             th:src="${logoUrl}"
+                             alt="HR Stack"
+                             width="75"
+                             style="display:block;margin-bottom:25px;">
+
+                        <h1 style="
+                                margin:0;
+                                color:#FFFFFF;
+                                font-size:36px;
+                                font-weight:bold;
+                                line-height:44px;">
+
+                            You're Invited
+
+                        </h1>
+
+                        <p style="
+                                margin:18px 0 0;
+                                color:#EFE9FF;
+                                font-size:20px;
+                                line-height:30px;">
+
+                            Join your team's workspace on HR Stack
+
+                        </p>
+
+                    </td>
+
+                </tr>
+
+                <!-- ========================= -->
+                <!-- BODY -->
+                <!-- ========================= -->
+
+                <tr>
+
+                    <td style="padding:45px;">
+
+                        <p style="
+                                margin:0;
+                                color:#222222;
+                                font-size:24px;
+                                font-weight:bold;">
+
+                            Hi
+                            <span th:text="${name}">Grace</span>,
+
+                        </p>
+
+                        <p style="
+                                margin:25px 0 0;
+                                color:#555555;
+                                font-size:18px;
+                                line-height:30px;">
+
+                            You've been invited to join
+
+                            <strong th:text="${companyName}">
+                                Acme Technologies
+                            </strong>
+
+                            on
+
+                            <strong>HR Stack</strong>.
+
+                        </p>
+
+                        <p style="
+                                margin:18px 0 0;
+                                color:#555555;
+                                font-size:18px;
+                                line-height:30px;">
+
+                            Accept this invitation to manage your profile,
+                            submit leave requests,
+                            view payroll (if enabled),
+                            receive company announcements,
+                            and collaborate with your team.
+
+                        </p>
+
+                        <!-- ========================= -->
+                        <!-- INVITATION DETAILS -->
+                        <!-- ========================= -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellpadding="0"
+                               cellspacing="0"
+                               border="0"
+                               style="
+                               margin-top:40px;
+                               background:#FAF8FF;
+                               border:1px solid #E7DDFF;
+                               border-radius:16px;">
+
+                            <tr>
+
+                                <td style="padding:30px;">
+
+                                    <h2 style="
+                                            margin:0 0 25px;
+                                            color:#5B21B6;
+                                            font-size:28px;">
+
+                                        Invitation Details
+
+                                    </h2>
+
+                                    <table width="100%"
+                                           cellpadding="10"
+                                           cellspacing="0"
+                                           border="0">
+
+                                        <tr>
+
+                                            <td width="40%"
+                                                style="
+                                                color:#777777;
+                                                font-size:16px;">
+
+                                                Workspace
+
+                                            </td>
+
+                                            <td style="
+                                                color:#222222;
+                                                font-size:18px;
+                                                font-weight:bold;"
+                                                th:text="${companyName}">
+
+                                                Acme Technologies
+
+                                            </td>
+
+                                        </tr>
+
+                                        <tr>
+
+                                            <td style="
+                                                color:#777777;
+                                                font-size:16px;">
+
+                                                Invited By
+
+                                            </td>
+
+                                            <td style="
+                                                color:#222222;
+                                                font-size:18px;
+                                                font-weight:bold;"
+                                                th:text="${adminName}">
+
+                                                John Doe
+
+                                            </td>
+
+                                        </tr>
+
+                                        <tr>
+
+                                            <td style="
+                                                color:#777777;
+                                                font-size:16px;">
+
+                                                Assigned Role
+
+                                            </td>
+
+                                            <td style="
+                                                color:#222222;
+                                                font-size:18px;
+                                                font-weight:bold;"
+                                                th:text="${role}">
+
+                                                HR Manager
+
+                                            </td>
+
+                                        </tr>
+
+                                    </table>
+
+                                </td>
+
+                            </tr>
+
+                        </table>
+                        <!-- ========================= -->
+                        <!-- ACCEPT INVITATION BUTTON -->
+                        <!-- ========================= -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellpadding="0"
+                               cellspacing="0"
+                               border="0"
+                               style="margin-top:40px;">
+
+                            <tr>
+
+                                <td align="center">
+
+                                    <a th:href="${inviteLink}"
+                                       style="
+                                       display:inline-block;
+                                       background:#6D28D9;
+                                       color:#FFFFFF;
+                                       text-decoration:none;
+                                       padding:18px 55px;
+                                       border-radius:12px;
+                                       font-size:20px;
+                                       font-weight:bold;">
+
+                                        Accept Invitation
+
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                        </table>
+
+                        <!-- ========================= -->
+                        <!-- EXPIRATION NOTICE -->
+                        <!-- ========================= -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellpadding="0"
+                               cellspacing="0"
+                               border="0"
+                               style="
+                               margin-top:40px;
+                               background:#FFF8E8;
+                               border:1px solid #FFE2A6;
+                               border-radius:14px;">
+
+                            <tr>
+
+                                <td style="padding:22px;">
+
+                                    <p style="
+                                            margin:0;
+                                            font-size:18px;
+                                            font-weight:bold;
+                                            color:#A15C00;">
+
+                                        ⏰ Invitation Expires Soon
+
+                                    </p>
+
+                                    <p style="
+                                            margin:12px 0 0;
+                                            color:#6B5D3B;
+                                            font-size:17px;
+                                            line-height:28px;">
+
+                                        This invitation expires in
+                                        <strong>7 days</strong>.
+
+                                        Please accept it before the
+                                        expiration date to access your
+                                        workspace.
+
+                                    </p>
+
+                                </td>
+
+                            </tr>
+
+                        </table>
+
+                        <!-- ========================= -->
+                        <!-- DIVIDER -->
+                        <!-- ========================= -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellpadding="0"
+                               cellspacing="0"
+                               border="0"
+                               style="margin-top:40px;">
+
+                            <tr>
+
+                                <td style="
+                                        border-top:1px solid #ECECEC;">
+
+                                </td>
+
+                            </tr>
+
+                        </table>
+
+                        <!-- ========================= -->
+                        <!-- BACKUP LINK -->
+                        <!-- ========================= -->
+
+                        <p style="
+                                margin:35px 0 0;
+                                text-align:center;
+                                color:#444444;
+                                font-size:18px;
+                                line-height:30px;">
+
+                            If the button above doesn't work,
+                            copy and paste the link below into
+                            your browser.
+
+                        </p>
+
+                        <p style="
+                                margin:18px 0 0;
+                                text-align:center;
+                                word-break:break-word;">
+
+                            <a th:href="${inviteLink}"
+                               th:text="${inviteLink}"
+                               style="
+                               color:#6D28D9;
+                               font-size:17px;
+                               text-decoration:none;
+                               font-weight:bold;">
+
+                                https://app.hrstack.com/invite/xxxxxxxx
+
+                            </a>
+
+                        </p>
+
+                        <!-- ========================= -->
+                        <!-- SECURITY NOTICE -->
+                        <!-- ========================= -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellpadding="0"
+                               cellspacing="0"
+                               border="0"
+                               style="
+                               margin-top:40px;
+                               background:#F9FAFB;
+                               border:1px solid #E5E7EB;
+                               border-radius:14px;">
+
+                            <tr>
+
+                                <td style="padding:22px;">
+
+                                    <p style="
+                                            margin:0;
+                                            font-size:18px;
+                                            font-weight:bold;
+                                            color:#222222;">
+
+                                        🔒 Security Notice
+
+                                    </p>
+
+                                    <p style="
+                                            margin:12px 0 0;
+                                            color:#666666;
+                                            font-size:17px;
+                                            line-height:28px;">
+
+                                        If you weren't expecting this
+                                        invitation, you can safely ignore
+                                        this email.
+
+                                        No account will be created until
+                                        you accept the invitation.
+
+                                    </p>
+
+                                </td>
+
+                            </tr>
+
+                        </table>
+
+                    </td>
+
+                </tr>
+                <!-- ========================= -->
+                <!-- FOOTER -->
+                <!-- ========================= -->
+
+                <tr>
+
+                    <td style="padding:0 40px;">
+
+                        <hr style="
+                            border:none;
+                            border-top:1px solid #E5E7EB;
+                            margin:0;">
+
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td align="center"
+                        style="
+                        background:#F5F3FF;
+                        padding:30px 40px;">
+
+                        <p style="
+                                margin:0;
+                                font-size:22px;
+                                font-weight:bold;
+                                color:#5B21B6;">
+
+                            HR Stack
+
+                        </p>
+
+                        <p style="
+                                margin:14px 0 6px;
+                                font-size:16px;
+                                color:#666666;
+                                line-height:26px;">
+
+                            Simplifying HR Management for Modern Teams
+
+                        </p>
+
+                        <p style="
+                                margin:0;
+                                font-size:14px;
+                                color:#9CA3AF;
+                                line-height:22px;">
+
+                            ©
+                            <span th:text="${#dates.year(#dates.createNow())}">
+                                2026
+                            </span>
+
+                            HR Stack. All rights reserved.
+
+                        </p>
+
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </td>
+
+    </tr>
+
+</table>
+
+</body>
+
+</html>

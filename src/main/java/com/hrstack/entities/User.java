@@ -28,9 +28,6 @@ public class User implements UserDetails {
     private String id;
 
     @Column(nullable = false)
-    private String companyName;
-
-    @Column(nullable = false)
     private String firstName;
 
     @Column(nullable = false)
@@ -42,14 +39,14 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private ReportsTo reportsTo;
 
+    @Column(nullable = false)
     private String jobTitle;
+
+    @Column(nullable = false)
     private String department;
     private String phoneNumber;
     private String imageUrl;
     private String imagePublicId;
-
-    @Column(nullable = false, unique = true)
-    private String workspaceUrl;
 
     @Column(nullable = false)
     private String password;
@@ -61,9 +58,6 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Column(nullable = false)
-    private Boolean isVerified;
-
     @Builder.Default
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSS][.SS][.S]")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -72,7 +66,21 @@ public class User implements UserDetails {
     private  LocalDateTime updatedAt;
 
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSS][.SS][.S]")
+    private  LocalDateTime editedAt;
+
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSS][.SS][.S]")
     private  LocalDateTime deletedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", foreignKey = @ForeignKey(name = "fk_user_company_id"))
+    private Company company;
+
+    public String getCompanyId(){
+        if(this.company != null){
+            return this.company.getId();
+        }
+        return null;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

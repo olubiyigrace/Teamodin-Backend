@@ -2,7 +2,8 @@ package com.hrstack.controllers;
 
 
 import com.hrstack.dto.requestDto.RefreshTokenRequest;
-import com.hrstack.dto.requestDto.RegisterAdminRequest;
+import com.hrstack.dto.requestDto.RegisterCompanyRequest;
+import com.hrstack.services.CompanyService;
 import com.hrstack.services.OtpService;
 import com.hrstack.dto.requestDto.OtpVerifyRequest;
 import com.hrstack.services.UserService;
@@ -18,10 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final UserService userService;
     private final OtpService otpService;
+    private final CompanyService companyService;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterAdminRequest request) {
-        userService.create(request);
+    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterCompanyRequest request) {
+        companyService.create(request);
         return ResponseEntity.ok(ApiResponse.success(true, "Registration successful. Check your email for the verification code.", null));
     }
 
@@ -33,7 +35,7 @@ public class AuthController {
 
     @PostMapping("/resend-otp")
     public ResponseEntity<ApiResponse<String>> resendOtp(@RequestParam String email) {
-        userService.resendVerificationOtp(email);
+        companyService.resendVerificationOtp(email);
         return ResponseEntity.ok(ApiResponse.success(true, "OTP sent successfully.", null));
     }
 

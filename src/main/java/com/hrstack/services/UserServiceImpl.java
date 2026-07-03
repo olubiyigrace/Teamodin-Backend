@@ -1,37 +1,40 @@
 package com.hrstack.services;
 
-import com.hrstack.dto.requestDto.RegisterAdminRequest;
 import com.hrstack.dto.requestDto.RefreshTokenRequest;
+import com.hrstack.dto.requestDto.RegisterUserRequest;
+import com.hrstack.dto.responseDto.UserResponse;
+import com.hrstack.entities.Company;
 import com.hrstack.entities.User;
+import com.hrstack.enums.InviteStatus;
 import com.hrstack.enums.OtpPurpose;
 import com.hrstack.enums.Role;
 import com.hrstack.exceptions.DuplicateResourceException;
 import com.hrstack.exceptions.InvalidRequestException;
 import com.hrstack.dto.requestDto.OtpRequest;
-import com.hrstack.mappers.AdminMapper;
+import com.hrstack.exceptions.UnauthorizedException;
+import com.hrstack.mappers.UserMapper;
 import com.hrstack.orders.OrderProducer;
 import com.hrstack.orders.ProducerMessage;
-import com.hrstack.properties.WorkspaceProperties;
 import com.hrstack.repositories.UserRepository;
 import com.hrstack.security.JwtService;
 import com.hrstack.utils.*;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +42,6 @@ import java.util.UUID;
 @Slf4j
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-    private final AdminMapper adminMapper;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
     private final OrderProducer orderProducer;
@@ -47,68 +49,70 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final CurrentUserUtil currentUserUtil;
     private final RedisSessionService redisSessionService;
-    private final WorkspaceProperties workspaceProperties;
     private final CloudinaryService cloudinaryService;
+    private final UserMapper userMapper;
+    private final EmailService emailService;
 
 
     @Override
-    public void create(RegisterAdminRequest request) {
-        Optional<User> existingUser = userRepository.findByWorkspaceUrl(workspaceProperties.getBaseUrl() + request.getWorkspaceUrl());
-        if(existingUser.isPresent()){
-            throw new DuplicateResourceException("Workspace already exists");
-        }
-        if (!request.getPassword().equals(request.getReEnterPassword())){
-            throw new InvalidRequestException("Passwords do not match");
-        }
-        User newUser = adminMapper.toEntity(request);
-        newUser.setRole(Role.ADMIN);
-        newUser.setIsVerified(false);
-        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(newUser);
+    public void createUser(RegisterUserRequest request) {
+        User loggedInUser = currentUserUtil.getLoggedInUser();
+            Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+            if (existingUser.isPresent()) {
+                log.debug("User with the email '{}' already exists.", request.getEmail());
+                throw new DuplicateResourceException("Workspace user already exists");
+            }
+            if (request.getRole() == Role.ADMIN) {
+                throw new InvalidRequestException(" Admin role cannot be selected");
+            }
+            User newUser = userMapper.toEntity(request);
+            newUser.setCompany(Company.builder().id(loggedInUser.getCompanyId()).build());
+            newUser.setStatus(InviteStatus.PENDING);
+            userRepository.save(newUser);
 
-        String otp = otpService.createOtp(
-                OtpRequest.builder()
-                        .email(request.getEmail())
-                        .purpose(OtpPurpose.VERIFY_ACCOUNT)
-                        .build()
-        );
-        orderProducer.sendMessage(
-                ProducerMessage.builder()
-                        .email(request.getEmail())
-                        .otp(otp)
-                        .purpose(OtpPurpose.VERIFY_ACCOUNT)
-                        .build()
-        );
-    }
-
-    @Override
-    public void resendVerificationOtp(String email) {
-        String otp = otpService.resendOtp(
-                        OtpRequest.builder()
-                                .email(email)
-                                .purpose(OtpPurpose.VERIFY_ACCOUNT)
-                                .build()
+            Map<String, Object> model = new HashMap<>();
+            model.put("name", request.getFirstName() + " " + request.getLastName());
+            model.put("adminName", loggedInUser.getFirstName() + " " + loggedInUser.getLastName());
+            model.put("companyName", loggedInUser.getCompany().getCompanyName());
+            model.put("role", newUser.getRole());
+            model.put("inviteLink", "https://hrstack.app/api/v1/invite?token=" + newUser.getId() + loggedInUser.getCompanyId());
+            try {
+                emailService.sendVerificationEmail(
+                        request.getEmail(),
+                        loggedInUser.getCompany().getCompanyName() + " Workspace Invite",
+                        "workspaceInvite",
+                        model
                 );
-        orderProducer.sendMessage(
-                ProducerMessage.builder()
-                        .email(email)
-                        .otp(otp)
-                        .purpose(OtpPurpose.VERIFY_ACCOUNT)
-                        .build()
-        );
+            } catch (MessagingException | UnsupportedEncodingException e) {
+                throw new RuntimeException("Failed to send invite to " + request.getEmail(), e);
+            }
     }
 
     @Override
-    public LoginResponse login(final LoginRequest request) {
-        final Authentication authentication = this.authenticationManager.authenticate(
+    public List<UserResponse> getAllUser() {
+        return List.of();
+    }
+
+    @Override
+    public void updateUser(String id, RegisterUserRequest registerUserRequest) {
+
+    }
+
+    @Override
+    public void deleteUser(String id) {
+
+    }
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
-                )
-        );
-        final User user = (User) authentication.getPrincipal();
-        if (!Boolean.TRUE.equals(user.getIsVerified())) {
-            throw new InvalidRequestException("User not verified");
+                ));
+        User user = (User) authentication.getPrincipal();
+        if(user.getRole().equals(Role.ADMIN) && user.getCompany().getIsVerified().equals(false)){
+            throw new UnauthorizedException("Verify your email to continue");
         }
         String sessionId = UUID.randomUUID().toString();
         redisSessionService.saveSession(
@@ -120,13 +124,13 @@ public class UserServiceImpl implements UserService {
                 user.getId()
         );
         String accessToken = jwtService.generateAccessToken(
-                user.getWorkspaceUrl(),
+                user.getCompanyId(),
                 user.getId(),
                 user.getRole().name(),
                 sessionId
                 );
         String refreshToken = jwtService.generateRefreshToken(
-                user.getWorkspaceUrl(),
+                user.getCompanyId(),
                 user.getId(),
                 user.getRole().name(),
                 sessionId);
@@ -152,17 +156,17 @@ public class UserServiceImpl implements UserService {
 
         String userId = jwtService.getUserIdFromRefreshToken(refreshToken);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new InvalidRequestException("User not found"));
         redisSessionService.saveSession(sessionId, user.getId());
         redisSessionService.saveRefreshSession(sessionId, user.getId());
 
         String newAccessToken = jwtService.generateAccessToken(
-                user.getWorkspaceUrl(),
+                user.getCompanyId(),
                 user.getId(),
                 user.getRole().name(),
                 sessionId);
         String newRefreshToken = jwtService.generateRefreshToken(
-                user.getWorkspaceUrl(),
+                user.getCompanyId(),
                 user.getId(),
                 user.getRole().name(),
                 sessionId);
@@ -194,8 +198,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void forgotPassword(ForgotPasswordRequest request) {
-        User existingUser = userRepository.findByEmail(request.getEmail());
-        if(existingUser == null){
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if(existingUser.isEmpty()){
             throw new InvalidRequestException(request.getEmail() + " not found.");
         }
         String otp = otpService.createOtp(
@@ -220,13 +224,14 @@ public class UserServiceImpl implements UserService {
             throw  new InvalidRequestException("Invalid token");
         }
         String email = jwtService.getEmailFromResetToken(resetToken);
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        if (existingUser.isEmpty()) {
             throw new InvalidRequestException("User not found");
         }
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new InvalidRequestException("Passwords do not match");
         }
+        User user = existingUser.get();
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
@@ -237,43 +242,35 @@ public class UserServiceImpl implements UserService {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new InvalidRequestException("Invalid authorization header");
         }
-
         String token = authHeader.substring(7);
         jwtService.validateToken(token);
         if (!jwtService.isAccessToken(token)) {
             throw new InvalidRequestException("Invalid access token");
         }
-
         String sessionId = jwtService.getSessionId(token);
        redisSessionService.deleteAll(sessionId);
     }
 
     @Override
-    public void update(String id, UpdateProfileRequest request) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new InvalidRequestException("User not found"));
-
+    public void editProfile(EditProfileRequest request) {
+        User user = currentUserUtil.getLoggedInUser();
         user.setFirstName(request.getFirstName().trim());
         user.setLastName(request.getLastName().trim());
-        user.setJobTitle(request.getJobTitle());
-        user.setRole(request.getRole());
-        user.setDepartment(request.getDepartment());
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setReportsTo(request.getReportsTo());
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setEditedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 
     @Override
     public void uploadProfilePicture(MultipartFile file) {
         User user = currentUserUtil.getLoggedInUser();
-
         if (file.isEmpty()) {
             throw new InvalidRequestException("Please select an image.");
         }
         if (user.getImagePublicId() != null) {
             cloudinaryService.delete(user.getImagePublicId());
         }
+
         List<String> allowedTypes = List.of(
                 "image/jpeg",
                 "image/png",
@@ -282,7 +279,6 @@ public class UserServiceImpl implements UserService {
         if (!allowedTypes.contains(file.getContentType())) {
             throw new InvalidRequestException("Only JPG and PNG images are allowed.");
         }
-
         if (file.getSize() > 3 * 1024 * 1024) {
             throw new InvalidRequestException("Image size must not exceed 3MB.");
         }
