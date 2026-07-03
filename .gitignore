@@ -33,3 +33,5 @@ build/
 .vscode/
 .env
 /src/main/resources/certs
+.env
+src/main/resources/certs/
