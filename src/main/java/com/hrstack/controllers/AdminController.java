@@ -40,7 +40,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllLoanApplications(
             @RequestParam(name = "page", defaultValue = "0") final int page,
             @RequestParam(name = "size", defaultValue = "10") final int size) {
-        return ResponseEntity.ok(ApiResponse.success(true, "Loan applications retrieved successfully",
+        return ResponseEntity.ok(ApiResponse.success(true, "Users retrieved successfully",
                 userService.getAllUsers(page, size)));
     }
 
