@@ -23,8 +23,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -89,13 +91,41 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getAllUser() {
-        return List.of();
+    public PageResponse<UserResponse> getAllUsersByStatus(InviteStatus inviteStatus, int page, int size) {
+        User loggedInUser = currentUserUtil.getLoggedInUser();
+        if (loggedInUser.getCompanyId() == null) {
+            throw new UnauthorizedException("User is not linked to any company");
+        }
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<User> users = userRepository.findByCompanyAndStatus(loggedInUser.getCompany(), inviteStatus, pageRequest);
+        if (inviteStatus == null) {
+            throw new InvalidRequestException("Invite status is required");
+        }
+        return PageResponse.of(users.map(userMapper::toResponse));
     }
 
     @Override
-    public void updateUser(String id, RegisterUserRequest registerUserRequest) {
+    public PageResponse<UserResponse> getAllUsers(int page, int size) {
+        User loggenInuser = currentUserUtil.getLoggedInUser();
+        final PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        final Page<User> loanApplications = userRepository.findByCompany(loggenInuser.getCompany(), pageRequest);
+        final Page<UserResponse> loanApplicationResponses = loanApplications.map(userMapper::toResponse);
+        return PageResponse.of(loanApplicationResponses);
+    }
 
+    @Override
+    public void updateUser(String id, UpdateUserRequest request) {
+        Optional<User> existingUserUser = userRepository.findById(id);
+        if (existingUserUser.isEmpty()){
+            throw new InvalidRequestException("User with the id " + id + " does not exist.");
+        }
+        User foundUser = existingUserUser.get();
+        foundUser.setDepartment(request.getDepartment());
+        foundUser.setReportsTo(request.getReportsTo());
+        foundUser.setJobTitle(request.getJobTitle());
+        foundUser.setRole(request.getRole());
+        foundUser.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(foundUser);
     }
 
     @Override

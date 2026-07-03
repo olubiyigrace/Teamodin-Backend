@@ -1,16 +1,12 @@
 package com.hrstack.controllers;
 
-import com.hrstack.dto.requestDto.RegisterUserRequest;
 import com.hrstack.services.UserService;
-import com.hrstack.utils.ApiResponse;
-import com.hrstack.utils.ChangePasswordRequest;
-import com.hrstack.utils.EditProfileRequest;
+import com.hrstack.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,13 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
     private final UserService userService;
 
-
-    @PostMapping("/register-user")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<String>> createUser(@Valid @RequestBody RegisterUserRequest request){
-        userService.createUser(request);
-        return ResponseEntity.ok(ApiResponse.success(true, "User created successfully", null));
-    }
 
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {

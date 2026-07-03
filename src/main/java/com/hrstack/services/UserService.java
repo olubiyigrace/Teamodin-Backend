@@ -3,16 +3,16 @@ package com.hrstack.services;
 import com.hrstack.dto.requestDto.RefreshTokenRequest;
 import com.hrstack.dto.requestDto.RegisterUserRequest;
 import com.hrstack.dto.responseDto.UserResponse;
+import com.hrstack.enums.InviteStatus;
 import com.hrstack.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
 public interface UserService {
     void createUser(RegisterUserRequest registerUserRequest);
-    List<UserResponse> getAllUser();
-    void updateUser(String id, RegisterUserRequest registerUserRequest);
+    PageResponse<UserResponse> getAllUsersByStatus(InviteStatus inviteStatus, int page, int size);
+    PageResponse<UserResponse> getAllUsers(int page, int size);
+    void updateUser(String id, UpdateUserRequest request);
     void deleteUser(String id);
     LoginResponse login(LoginRequest request);
     LoginResponse refreshToken(RefreshTokenRequest request);
