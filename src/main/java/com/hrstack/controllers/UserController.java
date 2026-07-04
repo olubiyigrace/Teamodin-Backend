@@ -1,6 +1,5 @@
 package com.hrstack.controllers;
 
-import com.hrstack.security.JwtService;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @RestController public class UserController {
     private final UserService userService;
-    private final JwtService jwtService;
 
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {

@@ -89,7 +89,7 @@ public class UserServiceImpl implements UserService {
         model.put("companyName", loggedInUser.getCompany().getCompanyName());
         model.put("role", newUser.getRole());
         model.put("password", request.getPassword());
-        model.put("inviteLink", "https://hrstack.app/api/v1/accept-invite?token=" + inviteToken);
+        model.put("inviteLink", "http://localhost:8080/api/v1/accept-invite?token=" + inviteToken);
 
         try {
             emailService.sendVerificationEmail(

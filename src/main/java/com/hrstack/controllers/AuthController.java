@@ -3,15 +3,21 @@ package com.hrstack.controllers;
 
 import com.hrstack.dto.requestDto.RefreshTokenRequest;
 import com.hrstack.dto.requestDto.RegisterCompanyRequest;
+import com.hrstack.security.JwtService;
 import com.hrstack.services.CompanyService;
 import com.hrstack.services.OtpService;
 import com.hrstack.dto.requestDto.OtpVerifyRequest;
 import com.hrstack.services.UserService;
 import com.hrstack.utils.*;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -20,6 +26,7 @@ public class AuthController {
     private final UserService userService;
     private final OtpService otpService;
     private final CompanyService companyService;
+    private final JwtService jwtService;
 
     @PostMapping("/sign-up")
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterCompanyRequest request) {
@@ -43,6 +50,20 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         final LoginResponse response = userService.login(request);
         return ResponseEntity.ok(ApiResponse.success(true, "login successful", response));
+    }
+
+    @GetMapping("/accept-invite")
+    public void acceptInvite(@RequestParam String token, HttpServletResponse response) throws IOException {
+        Claims claims = jwtService.validateWorkspaceInviteToken(token);
+        userService.validateWorkspaceInvite(token, claims);
+        response.sendRedirect("/api/v1/invited-users-login?token=" + token);
+    }
+
+    @GetMapping("/invited-users-login")
+    public ModelAndView invitedUsersLoginPage(@RequestParam String token) {
+        ModelAndView mv = new ModelAndView("invited-users-login");
+        mv.addObject("token", token);
+        return mv;
     }
 
     @PostMapping("/invited-user-login")
