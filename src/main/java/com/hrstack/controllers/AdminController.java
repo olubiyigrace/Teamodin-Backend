@@ -48,6 +48,5 @@ public class AdminController {
     public ResponseEntity<ApiResponse<String>>  updateUser(@RequestParam String id, @Valid @RequestBody UpdateUserRequest request) {
         userService.updateUser(id, request);
         return ResponseEntity.ok(ApiResponse.success(true, "User updated successfully", null));
-
     }
 }
