@@ -1,6 +1,7 @@
 package com.hrstack.entities;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.hrstack.enums.UserProfileStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
@@ -30,6 +31,9 @@ public class Company{
 
     @Column(nullable = false)
     private String adminPassword;
+
+    @Enumerated(EnumType.STRING)
+    private UserProfileStatus userProfileStatus;
 
     @Column(nullable = false)
     private Boolean isVerified = false;

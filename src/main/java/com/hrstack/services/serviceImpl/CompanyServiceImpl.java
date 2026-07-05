@@ -68,6 +68,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .email(company.getAdminEmail())
                 .password(company.getAdminPassword())
                 .company(company)
+                .userProfileStatus(company.getUserProfileStatus())
                 .role(Role.ADMIN)
                 .build();
         userRepository.save(adminUser);

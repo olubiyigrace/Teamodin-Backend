@@ -8,6 +8,7 @@ import com.hrstack.entities.User;
 import com.hrstack.enums.InviteStatus;
 import com.hrstack.enums.OtpPurpose;
 import com.hrstack.enums.Role;
+import com.hrstack.enums.UserProfileStatus;
 import com.hrstack.exceptions.DuplicateResourceException;
 import com.hrstack.exceptions.InvalidRequestException;
 import com.hrstack.dto.requestDto.OtpRequest;
@@ -223,6 +224,7 @@ public class UserServiceImpl implements UserService {
             throw new InvalidRequestException("This invitation does not belong to this account.");
         }
         invitedUser.setStatus(InviteStatus.ACCEPTED);
+        invitedUser.setUserProfileStatus(UserProfileStatus.ACTIVE);
         invitedUser.setInviteToken(null);
         invitedUser.setExpiresAt(null);
         userRepository.save(invitedUser);
@@ -266,6 +268,9 @@ public class UserServiceImpl implements UserService {
         User user = (User) authentication.getPrincipal();
         if(user.getRole().equals(Role.ADMIN) && user.getCompany().getIsVerified().equals(false)){
             throw new UnauthorizedException("Verify your email to continue");
+        }
+        if(!user.getUserProfileStatus().equals(UserProfileStatus.ACTIVE)){
+            throw new UnauthorizedException("Only an active user can login");
         }
         String sessionId = UUID.randomUUID().toString();
         redisSessionService.saveSession(
@@ -442,7 +447,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deactivateUser(String id) {
+    }
 
+    @Override
+    public void suspendUser(String id) {
     }
 }
 

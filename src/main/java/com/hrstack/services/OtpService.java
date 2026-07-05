@@ -5,6 +5,7 @@ import com.hrstack.dto.requestDto.OtpVerifyRequest;
 import com.hrstack.entities.Company;
 import com.hrstack.entities.Otp;
 import com.hrstack.enums.OtpPurpose;
+import com.hrstack.enums.UserProfileStatus;
 import com.hrstack.exceptions.DuplicateResourceException;
 import com.hrstack.exceptions.InvalidRequestException;
 import com.hrstack.repositories.OtpRepository;
@@ -82,6 +83,7 @@ public class OtpService {
         newOtp.setUsed(true);
         Company workspace = companyRepository.findByAdminEmail(request.getAdminEmail());
         workspace.setIsVerified(true);
+        workspace.setUserProfileStatus(UserProfileStatus.ACTIVE);
         companyRepository.save(workspace);
         otpRepository.save(newOtp);
     }

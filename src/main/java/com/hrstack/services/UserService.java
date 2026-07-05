@@ -27,4 +27,5 @@ public interface UserService {
     void editProfile(EditProfileRequest editProfileRequest);
     void uploadProfilePicture(MultipartFile file);
     void deactivateUser(String id);
+    void suspendUser(String id);
 }
