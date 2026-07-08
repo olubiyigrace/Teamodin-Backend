@@ -1,4 +1,4 @@
-package com.hrstack.utils;
+package com.hrstack.dto.requestDto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

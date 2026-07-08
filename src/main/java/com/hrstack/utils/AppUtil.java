@@ -2,7 +2,7 @@ package com.hrstack.utils;
 
 import java.security.SecureRandom;
 
-public class AppUtils {
+public class AppUtil {
     private static final SecureRandom RANDOM = new SecureRandom();
 
 

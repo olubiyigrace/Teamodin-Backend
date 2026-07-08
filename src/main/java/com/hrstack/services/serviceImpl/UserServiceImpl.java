@@ -1,21 +1,21 @@
 package com.hrstack.services.serviceImpl;
 
-import com.hrstack.dto.requestDto.RefreshTokenRequest;
-import com.hrstack.dto.requestDto.RegisterUserRequest;
-import com.hrstack.dto.responseDto.UserResponse;
+import com.hrstack.dto.requestDto.*;
+import com.hrstack.dto.responseDto.*;
 import com.hrstack.entities.Company;
 import com.hrstack.entities.User;
+import com.hrstack.entities.UserSession;
 import com.hrstack.enums.InviteStatus;
 import com.hrstack.enums.OtpPurpose;
 import com.hrstack.enums.Role;
 import com.hrstack.enums.UserProfileStatus;
 import com.hrstack.exceptions.DuplicateResourceException;
 import com.hrstack.exceptions.InvalidRequestException;
-import com.hrstack.dto.requestDto.OtpRequest;
 import com.hrstack.exceptions.UnauthorizedException;
 import com.hrstack.mappers.UserMapper;
 import com.hrstack.orders.OrderProducer;
 import com.hrstack.orders.ProducerMessage;
+import com.hrstack.properties.JwtProperties;
 import com.hrstack.repositories.UserRepository;
 import com.hrstack.security.JwtService;
 import com.hrstack.services.*;
@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -57,6 +59,10 @@ public class UserServiceImpl implements UserService {
     private final CloudinaryService cloudinaryService;
     private final UserMapper userMapper;
     private final EmailService emailService;
+    private final IpAddressUtil ipAddressUtil;
+    private final UserAgentUtil userAgentUtil;
+    private final JwtProperties jwtProperties;
+
 
 
     @Override
@@ -65,7 +71,7 @@ public class UserServiceImpl implements UserService {
         if(loggedInUser.getFirstName().isBlank() && loggedInUser.getLastName().isBlank()){
             throw new UnauthorizedException("Edit your profile to have a name as the admin");
         }
-            Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         if (existingUser.isPresent()) {
             log.debug("User with the email '{}' already exists.", request.getEmail());
             throw new DuplicateResourceException("Workspace user already exists");
@@ -146,11 +152,11 @@ public class UserServiceImpl implements UserService {
         if (loggedInUser.getCompanyId() == null) {
             throw new UnauthorizedException("User is not linked to any company");
         }
-        PageRequest pageRequest = PageRequest.of(page, size);
-        Page<User> users = userRepository.findByCompanyAndStatus(loggedInUser.getCompany(), inviteStatus, pageRequest);
         if (inviteStatus == null) {
             throw new InvalidRequestException("Invite status is required");
         }
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<User> users = userRepository.findByCompanyAndStatus(loggedInUser.getCompany(), inviteStatus, pageRequest);
         return PageResponse.of(users.map(userMapper::toResponse));
     }
 
@@ -164,18 +170,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", key = "#id")
     public void updateUser(String id, UpdateUserRequest request) {
-        Optional<User> existingUserUser = userRepository.findById(id);
-        if (existingUserUser.isEmpty()){
-            throw new InvalidRequestException("User with the id " + id + " does not exist.");
-        }
-        User foundUser = existingUserUser.get();
-        foundUser.setDepartment(request.getDepartment());
-        foundUser.setReportsTo(request.getReportsTo());
-        foundUser.setJobTitle(request.getJobTitle());
-        foundUser.setRole(request.getRole());
-        foundUser.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(foundUser);
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new InvalidRequestException("User with the id " + id + " does not exist."));
+        existingUser.setDepartment(request.getDepartment());
+        existingUser.setReportsTo(request.getReportsTo());
+        existingUser.setJobTitle(request.getJobTitle());
+        existingUser.setRole(request.getRole());
+        existingUser.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(existingUser);
     }
 
     @Override
@@ -212,7 +216,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LoginResponse invitedUserLogin(InvitedUserLoginRequest request) {
+    public LoginResponse invitedUserLogin(InvitedUserLoginRequest request, HttpServletRequest httpServletRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
@@ -230,14 +234,18 @@ public class UserServiceImpl implements UserService {
         userRepository.save(invitedUser);
 
         String sessionId = UUID.randomUUID().toString();
-        redisSessionService.saveSession(
-                sessionId,
-                authenticatedUser.getId()
-        );
-        redisSessionService.saveRefreshSession(
-                sessionId,
-                authenticatedUser.getId()
-        );
+        UserSession session = UserSession.builder()
+                .sessionId(sessionId)
+                .userId(invitedUser.getId())
+                .companyId(invitedUser.getCompanyId())
+                .role(invitedUser.getRole().name())
+                .ipAddress(ipAddressUtil.getClientIp(httpServletRequest))
+                .userAgent(userAgentUtil.getUserAgent(httpServletRequest))
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(jwtProperties.getRefreshTokenExpiration())))
+                .build();
+        redisSessionService.saveSession(session);
+        redisSessionService.saveRefreshSession(session);
 
         String accessToken = jwtService.generateAccessToken(
                 authenticatedUser.getCompanyId(),
@@ -259,34 +267,58 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, HttpServletRequest httpServletRequest) {
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 ));
         User user = (User) authentication.getPrincipal();
-        if(user.getRole().equals(Role.ADMIN) && user.getCompany().getIsVerified().equals(false)){
+        if (user.getRole().equals(Role.ADMIN) && user.getCompany().getIsVerified().equals(false)) {
             throw new UnauthorizedException("Verify your email to continue");
         }
-        if(!user.getRole().equals(Role.ADMIN) && !user.getUserProfileStatus().equals(UserProfileStatus.ACTIVE)){
+        if (!user.getRole().equals(Role.ADMIN) && !user.getUserProfileStatus().equals(UserProfileStatus.ACTIVE)) {
             throw new UnauthorizedException("Only an active user can login");
         }
+
         String sessionId = UUID.randomUUID().toString();
-        redisSessionService.saveSession(
-                sessionId,
-                user.getId()
-        );
-        redisSessionService.saveRefreshSession(
-                sessionId,
-                user.getId()
-        );
+        UserSession session = UserSession.builder()
+                .sessionId(sessionId)
+                .userId(user.getId())
+                .companyId(user.getCompanyId())
+                .role(user.getRole().name())
+                .ipAddress(ipAddressUtil.getClientIp(httpServletRequest))
+                .userAgent(userAgentUtil.getUserAgent(httpServletRequest))
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(jwtProperties.getRefreshTokenExpiration())))
+                .build();
+        redisSessionService.saveSession(session);
+        redisSessionService.saveRefreshSession(session);
+
+        Map<String, Object> model = new HashMap<>();
+        model.put("firstName", user.getFirstName());
+        model.put("loginTime", session.getCreatedAt());
+        model.put("device", session.getUserAgent());
+        model.put("ipAddress", session.getIpAddress());
+        model.put("securityUrl", "https://app.hrstack.com/settings/security");
+        model.put("changePasswordUrl", "https://app.hrstack.com/settings/security/password");
+
+        try {
+            emailService.sendVerificationEmail(
+                    request.getEmail(),
+                    "New Login Alert!",
+                    "login",
+                    model);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+
         String accessToken = jwtService.generateAccessToken(
                 user.getCompanyId(),
                 user.getId(),
                 user.getRole().name(),
                 sessionId
-                );
+        );
         String refreshToken = jwtService.generateRefreshToken(
                 user.getCompanyId(),
                 user.getId(),
@@ -307,16 +339,24 @@ public class UserServiceImpl implements UserService {
             throw new InvalidRequestException("Invalid refresh token");
         }
 
+        jwtService.validateToken(refreshToken);
         String sessionId = jwtService.getSessionId(refreshToken);
-        if (!redisSessionService.isRefreshSessionActive(sessionId)) {
+        UserSession session = redisSessionService.getRefreshSession(sessionId);
+        if (session == null) {
             throw new InvalidRequestException("Refresh session expired");
         }
 
-        String userId = jwtService.getUserIdFromRefreshToken(refreshToken);
-        User user = userRepository.findById(userId)
+        String tokenUserId = jwtService.getUserIdFromRefreshToken(refreshToken);
+        if (!session.getUserId().equals(tokenUserId)) {
+            throw new UnauthorizedException("Invalid refresh session");
+        }
+
+        User user = userRepository.findById(tokenUserId)
                 .orElseThrow(() -> new InvalidRequestException("User not found"));
-        redisSessionService.saveSession(sessionId, user.getId());
-        redisSessionService.saveRefreshSession(sessionId, user.getId());
+        session.setCreatedAt(LocalDateTime.now());
+        session.setExpiresAt(LocalDateTime.now().plus(Duration.ofMillis(jwtProperties.getRefreshTokenExpiration())));
+        redisSessionService.saveSession(session);
+        redisSessionService.saveRefreshSession(session);
 
         String newAccessToken = jwtService.generateAccessToken(
                 user.getCompanyId(),
@@ -405,7 +445,46 @@ public class UserServiceImpl implements UserService {
             throw new InvalidRequestException("Invalid access token");
         }
         String sessionId = jwtService.getSessionId(token);
-       redisSessionService.deleteAll(sessionId);
+        redisSessionService.revokeSession(sessionId);
+    }
+
+    @Override
+    public List<SessionResponse> getActiveSessions(HttpServletRequest request) {
+        User currentUser = currentUserUtil.getLoggedInUser();
+        String token = request.getHeader(HttpHeaders.AUTHORIZATION)
+                .substring(7);
+        String currentSessionId = jwtService.getSessionId(token);
+        List<UserSession> sessions =
+                redisSessionService.getUserSessions(currentUser.getId());
+        return sessions.stream()
+                .map(session -> SessionResponse.builder()
+                        .sessionId(session.getSessionId())
+                        .device(session.getUserAgent())
+                        .ipAddress(session.getIpAddress())
+                        .createdAt(session.getCreatedAt())
+                        .expiresAt(session.getExpiresAt())
+                        .currentSession(session.getSessionId().equals(currentSessionId))
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public void logoutAllDevices() {
+        User user = currentUserUtil.getLoggedInUser();
+        redisSessionService.revokeAllSessions(user.getId());
+    }
+
+    @Override
+    public void revokeSession(String sessionId) {
+        User currentUser = currentUserUtil.getLoggedInUser();
+        UserSession session = redisSessionService.getSession(sessionId);
+        if (session == null) {
+            throw new InvalidRequestException("Session not found");
+        }
+        if (!session.getUserId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("Access denied");
+        }
+        redisSessionService.revokeSession(sessionId);
     }
 
     @Override

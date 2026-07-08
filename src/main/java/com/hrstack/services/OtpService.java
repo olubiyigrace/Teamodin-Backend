@@ -11,8 +11,8 @@ import com.hrstack.exceptions.InvalidRequestException;
 import com.hrstack.repositories.OtpRepository;
 import com.hrstack.repositories.CompanyRepository;
 import com.hrstack.security.JwtService;
-import com.hrstack.utils.AppUtils;
-import com.hrstack.utils.VerifyResetOtpRequest;
+import com.hrstack.utils.AppUtil;
+import com.hrstack.dto.requestDto.VerifyResetOtpRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -36,7 +36,7 @@ public class OtpService {
 
     public String createOtp(OtpRequest request) {
         checkCooldown(request.getEmail(), request.getPurpose());
-        String otpCode = AppUtils.generateOtp();
+        String otpCode = AppUtil.generateOtp();
         Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
 
         if(existingOtp.isPresent() && existingOtp.get().getUsed().equals(true)){
@@ -109,7 +109,7 @@ public class OtpService {
 
     public String resendOtp(OtpRequest request) {
         checkCooldown(request.getEmail(), request.getPurpose());
-        String otpCode = AppUtils.generateOtp();
+        String otpCode = AppUtil.generateOtp();
         Optional<Otp> existingOtp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(request.getEmail(), request.getPurpose());
 
        if(existingOtp.isPresent() && existingOtp.get().getUsed().equals(true)){

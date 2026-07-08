@@ -52,11 +52,11 @@ spring:
       mail:
        smtp:
         auth: true
-#        starttls:
-#            enable: true
-#            required: true
+        starttls:
+            enable: true
+            required: true
         ssl:
-          enable: true
+          enable: false
 
   data:
     redis:

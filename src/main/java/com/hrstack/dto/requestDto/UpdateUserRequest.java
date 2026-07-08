@@ -1,4 +1,4 @@
-package com.hrstack.utils;
+package com.hrstack.dto.requestDto;
 
 import com.hrstack.enums.ReportsTo;
 import com.hrstack.enums.Role;

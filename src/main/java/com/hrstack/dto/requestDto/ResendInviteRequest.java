@@ -1,4 +1,4 @@
-package com.hrstack.utils;
+package com.hrstack.dto.requestDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

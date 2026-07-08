@@ -1,4 +1,4 @@
-package com.hrstack.utils;
+package com.hrstack.security;
 
 public class TenantContext {
     private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();

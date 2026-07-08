@@ -1,4 +1,4 @@
-package com.hrstack.utils;
+package com.hrstack.dto.responseDto;
 
 import lombok.*;
 import org.springframework.data.domain.Page;
