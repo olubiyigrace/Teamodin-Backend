@@ -4,8 +4,6 @@ import com.hrstack.dto.requestDto.ChangePasswordRequest;
 import com.hrstack.dto.requestDto.EditProfileRequest;
 import com.hrstack.dto.responseDto.ApiResponse;
 import com.hrstack.dto.responseDto.SessionResponse;
-import com.hrstack.entities.UserSession;
-import com.hrstack.services.RedisSessionService;
 import com.hrstack.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
